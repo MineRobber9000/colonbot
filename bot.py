@@ -1,5 +1,8 @@
 import tweepy,checker
+from time import sleep
 from keys import *
+
+responded_to = []
 
 def log(action):
 	with open("log.txt","ab") as f:
@@ -11,24 +14,22 @@ api = tweepy.API(auth)
 
 RESPONSE = "umm... you're hugging him wrong."
 
-lasttweet = None
-
 def runTime():
-	# use global lasttweet
-	global lasttweet
-	# newest tweet from anyone
-	newtweet = api.search(q="from:*")
+	# newest tweets from anyone
+	newtweets = api.search(q="colon")
 	# is it new?
-	if newtweet != lasttweet:
+	for tweet in newtweets:
+		# have we already seen this tweet? if so, carry on past it
+		if tweet.id in responded_to:
+			continue
 		# does it match what we're looking for?
-		if checker.check(newtweet.text):
+		if checker.check(tweet.text):
 			# reply in the form "@user <RESPONSE>"
-			sn = newtweet.user.screen_name
+			sn = tweet.user.screen_name
 			m = "@{} {}".format(sn,RESPONSE)
-			api.update_status(m,newtweet.id)
-			log("Responded to @{}, who said \"{}\".".format(sn,newtweet.text))
-	# save the new tweet as it is now the latest one we've processed.
-	lasttweet = newtweet
+			api.update_status(m,tweet.id)
+			responded_to.append(tweet.id)
+			log("Responded to @{}, who said \"{}\".".format(sn,tweet.text))
 
 while True:
 	runTime()
